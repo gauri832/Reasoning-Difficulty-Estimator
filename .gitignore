@@ -1,0 +1,15 @@
+# Ignore data and models
+data/
+models/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment
+venv/
+python
+
+# OS
+.DS_Store
+Thumbs.db

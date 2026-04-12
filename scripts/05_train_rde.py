@@ -1,281 +1,316 @@
-# scripts/05_train_rde.py
-# Phase 2: Train the Reasoning Difficulty Estimator (RDE)
-# Input:  data/features/labeled_signals.csv
-# Output: models/rde/best_model.pt + training metrics
-
+import json
 import os
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import classification_report, confusion_matrix
-import json
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 os.makedirs("models/rde", exist_ok=True)
-os.makedirs("data/features", exist_ok=True)
 
-# ── Config ────────────────────────────────────────────────
-FEATURES    = ["attn_entropy", "varentropy", "perplexity",
-               "tree_depth", "clause_count", "avg_sent_len"]
+SCALAR_FEATURES = [
+    "attn_entropy",
+    "varentropy",
+    "perplexity",
+    "tree_depth",
+    "clause_count",
+    "avg_sent_len",
+    "proof_kw_density",
+    "math_sym_density",
+    "eq_density",
+    "abstract_ratio",
+    "avg_word_len",
+    "num_density",
+]
+
+CLASS_NAMES = ["easy", "medium", "hard"]
+CLASS_TO_IDX = {name: idx for idx, name in enumerate(CLASS_NAMES)}
+
 HIDDEN_DIMS = [256, 128, 64]
-DROPOUT     = 0.3
-LR          = 1e-3
-BATCH_SIZE  = 32
-EPOCHS      = 60
-DEVICE      = "cuda" if torch.cuda.is_available() else "cpu"
-SEED        = 42
+DROPOUT = 0.30
+LR = 1e-3
+BATCH_SIZE = 32
+EPOCHS = 90
+STOP = 18
+SEED = 42
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
-# ── Load signals + embeddings ────────────────────────────
-import json
 
-df = pd.read_csv("data/features/labeled_signals.csv")
-
-with open("data/features/signals.json") as f:
-    signals_full = json.load(f)
-
-# id → embedding map
-emb_map = {item["id"]: item["embedding"] for item in signals_full if "embedding" in item}
-
-# keep only rows with embeddings
-df = df[df["id"].isin(emb_map)].reset_index(drop=True)
-
-# ── Build features ───────────────────────────────────────
-SCALAR_COLS = ["attn_entropy", "varentropy", "perplexity",
-               "tree_depth", "clause_count", "avg_sent_len"]
-
-scalar_feats = df[SCALAR_COLS].fillna(0).values.astype(np.float32)
-
-emb_feats = np.array(
-    [emb_map[id_] for id_ in df["id"]],
-    dtype=np.float32
-)
-
-# Normalize scalars
-scalar_mean = scalar_feats.mean(axis=0)
-scalar_std  = scalar_feats.std(axis=0) + 1e-8
-scalar_norm = (scalar_feats - scalar_mean) / scalar_std
-
-# Normalize embeddings
-emb_mean = emb_feats.mean(axis=0)
-emb_std  = emb_feats.std(axis=0) + 1e-8
-emb_norm = (emb_feats - emb_mean) / emb_std
-
-# Combine
-X = np.concatenate([scalar_norm, emb_norm], axis=1)
-
-# ── Labels ───────────────────────────────────────────────
-from sklearn.preprocessing import LabelEncoder
-
-le = LabelEncoder()
-le.fit(["easy", "medium", "hard"])   # correct order
-y = le.transform(df["difficulty"])
-
-print("Class mapping:", dict(zip(le.classes_, le.transform(le.classes_))))
-print("Class counts:\n", df["difficulty"].value_counts())
-
-# Save label classes
-np.save("models/rde/label_classes.npy", le.classes_)
-
-# Save scalers
-np.save("models/rde/scalar_mean.npy", scalar_mean)
-np.save("models/rde/scalar_scale.npy", scalar_std)
-np.save("models/rde/emb_mean.npy", emb_mean)
-np.save("models/rde/emb_scale.npy", emb_std)
-
-# ── Train / Val / Test split (70/15/15) ───────────────────
-X_train, X_temp, y_train, y_temp = train_test_split(
-    X, y, test_size=0.30, stratify=y, random_state=SEED) 
-X_val, X_test, y_val, y_test = train_test_split(
-    X_temp, y_temp, test_size=0.50, stratify=y_temp, random_state=SEED)
-
-print(f"Train: {len(X_train)} | Val: {len(X_val)} | Test: {len(X_test)}")
+def safe_class_weights(y: np.ndarray, n_classes: int) -> np.ndarray:
+    counts = np.bincount(y, minlength=n_classes).astype(np.float32)
+    counts[counts == 0] = 1.0
+    weights = len(y) / (n_classes * counts)
+    return weights.astype(np.float32)
 
 
-# ── Dataset ───────────────────────────────────────────────
 class SignalDataset(Dataset):
-    def __init__(self, X, y):
-        self.X = torch.tensor(X, dtype=torch.float32)
+    def __init__(self, x: np.ndarray, y: np.ndarray):
+        self.x = torch.tensor(x, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.long)
-    def __len__(self):  return len(self.y)
-    def __getitem__(self, i): return self.X[i], self.y[i]
 
-train_loader = DataLoader(SignalDataset(X_train, y_train),
-                          batch_size=BATCH_SIZE, shuffle=True)
-val_loader   = DataLoader(SignalDataset(X_val,   y_val),
-                          batch_size=BATCH_SIZE)
-test_loader  = DataLoader(SignalDataset(X_test,  y_test),
-                          batch_size=BATCH_SIZE)
+    def __len__(self) -> int:
+        return len(self.y)
+
+    def __getitem__(self, idx: int):
+        return self.x[idx], self.y[idx]
 
 
-# ── RDE Model (MLP with BatchNorm + Dropout) ──────────────
 class RDEClassifier(nn.Module):
-    def __init__(self, input_dim, hidden_dims, num_classes, dropout):
+    def __init__(self, input_dim: int, hidden_dims, num_classes: int, dropout: float):
         super().__init__()
         layers = []
         prev = input_dim
         for h in hidden_dims:
-            layers += [
+            layers.extend([
                 nn.Linear(prev, h),
                 nn.BatchNorm1d(h),
                 nn.ReLU(),
-                nn.Dropout(dropout)
-            ]
+                nn.Dropout(dropout),
+            ])
             prev = h
         layers.append(nn.Linear(prev, num_classes))
         self.net = nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x)
 
-    def predict_proba(self, x):
-        with torch.no_grad():
-            logits = self.forward(x)
-            return torch.softmax(logits, dim=-1)
 
-input_dim= X.shape[1]
-model = RDEClassifier(
-    input_dim   = input_dim,
-    hidden_dims = HIDDEN_DIMS,
-    num_classes = len(le.classes_),
-    dropout     = DROPOUT
-).to(DEVICE)
-
-print(f"\nRDE Model:\n{model}\n")
-print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}")
-
-# ── Class weights to handle imbalance ─────────────────────
-class_counts = np.bincount(y_train)
-class_weights = torch.tensor(
-    1.0 / class_counts, dtype=torch.float32
-).to(DEVICE)
-class_weights = class_weights / class_weights.sum() * len(le.classes_)
-
-criterion = nn.CrossEntropyLoss(weight=class_weights)
-optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode="max", patience=8, factor=0.5)
-
-# ── Training loop ─────────────────────────────────────────
-def evaluate(loader):
+def evaluate(model, loader, criterion):
     model.eval()
-    correct, total, loss_sum = 0, 0, 0.0
-    all_preds, all_labels = [], []
+    preds_all = []
+    labels_all = []
+    total = 0
+    correct = 0
+    loss_sum = 0.0
+
     with torch.no_grad():
-        for X_b, y_b in loader:
-            X_b, y_b = X_b.to(DEVICE), y_b.to(DEVICE)
-            logits = model(X_b)
-            loss   = criterion(logits, y_b)
-            preds  = logits.argmax(dim=1)
-            correct   += (preds == y_b).sum().item()
-            total     += len(y_b)
-            loss_sum  += loss.item() * len(y_b)
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(y_b.cpu().numpy())
-    return correct / total, loss_sum / total, all_preds, all_labels
+        for xb, yb in loader:
+            xb = xb.to(DEVICE)
+            yb = yb.to(DEVICE)
+            logits = model(xb)
+            loss = criterion(logits, yb)
+            preds = logits.argmax(dim=1)
+
+            n = len(yb)
+            total += n
+            correct += (preds == yb).sum().item()
+            loss_sum += loss.item() * n
+            preds_all.extend(preds.cpu().numpy().tolist())
+            labels_all.extend(yb.cpu().numpy().tolist())
+
+    acc = correct / max(total, 1)
+    avg_loss = loss_sum / max(total, 1)
+    macro_f1 = f1_score(labels_all, preds_all, average="macro", zero_division=0)
+    return acc, avg_loss, macro_f1, preds_all, labels_all
 
 
-best_val_acc   = 0.0
-history        = {"train_loss": [], "val_loss": [], "val_acc": []}
-patience_count = 0
-EARLY_STOP     = 15
+def main() -> None:
+    df = pd.read_csv("data/features/labeled_signals_v2.csv")
+    df = df.dropna(subset=SCALAR_FEATURES + ["difficulty"])
+    df = df[df["difficulty"].isin(CLASS_NAMES)].copy()
 
-print("=" * 55)
-print(f"{'Epoch':>6}  {'Train Loss':>10}  {'Val Loss':>9}  {'Val Acc':>8}")
-print("=" * 55)
+    with open("data/features/signals_v2.json", "r", encoding="utf-8") as f:
+        signals = json.load(f)
+    emb_map = {item["id"]: item["embedding"] for item in signals if "embedding" in item}
 
-for epoch in range(1, EPOCHS + 1):
-    model.train()
-    train_loss = 0.0
-    for X_b, y_b in train_loader:
-        X_b, y_b = X_b.to(DEVICE), y_b.to(DEVICE)
-        optimizer.zero_grad()
-        loss = criterion(model(X_b), y_b)
-        loss.backward()
-        optimizer.step()
-        train_loss += loss.item() * len(y_b)
-    train_loss /= len(X_train)
+    df = df[df["id"].isin(emb_map)].reset_index(drop=True)
 
-    val_acc, val_loss, _, _ = evaluate(val_loader)
-    scheduler.step(val_acc)
+    print(f"Dataset: {len(df)} samples")
+    print("Class distribution:\n", df["difficulty"].value_counts(), "\n")
 
-    history["train_loss"].append(train_loss)
-    history["val_loss"].append(val_loss)
-    history["val_acc"].append(val_acc)
+    scalar_feats = df[SCALAR_FEATURES].fillna(0.0).values.astype(np.float32)
+    emb_feats = np.array([emb_map[i] for i in df["id"]], dtype=np.float32)
 
-    if epoch % 5 == 0 or epoch == 1:
-        print(f"{epoch:>6}  {train_loss:>10.4f}  {val_loss:>9.4f}  {val_acc:>8.4f}")
+    sc_mean = scalar_feats.mean(axis=0)
+    sc_std = scalar_feats.std(axis=0) + 1e-8
+    em_mean = emb_feats.mean(axis=0)
+    em_std = emb_feats.std(axis=0) + 1e-8
 
-    if val_acc > best_val_acc:
-        best_val_acc   = val_acc
-        patience_count = 0
-        torch.save({
-            "model_state":  model.state_dict(),
-            "input_dim":    len(FEATURES),
-            "hidden_dims":  HIDDEN_DIMS,
-            "num_classes":  len(le.classes_),
-            "dropout":      DROPOUT,
-            "features":     FEATURES,
-            "label_classes":list(le.classes_),
-            "val_acc":      val_acc
-        }, "models/rde/best_model.pt")
-    else:
-        patience_count += 1
-        if patience_count >= EARLY_STOP:
-            print(f"\nEarly stopping at epoch {epoch}")
-            break
+    scalar_norm = (scalar_feats - sc_mean) / sc_std
+    emb_norm = (emb_feats - em_mean) / em_std
+    x = np.concatenate([scalar_norm, emb_norm], axis=1).astype(np.float32)
 
-print(f"\n✅ Best Val Accuracy: {best_val_acc:.4f}")
+    np.save("models/rde/scalar_mean.npy", sc_mean)
+    np.save("models/rde/scalar_scale.npy", sc_std)
+    np.save("models/rde/emb_mean.npy", em_mean)
+    np.save("models/rde/emb_scale.npy", em_std)
+    np.save("models/rde/label_classes.npy", np.array(CLASS_NAMES))
 
-# Save training history
-with open("models/rde/training_history.json", "w") as f:
-    json.dump(history, f, indent=2)
+    y = df["difficulty"].map(CLASS_TO_IDX).astype(np.int64).values
+    print("Class mapping:", CLASS_TO_IDX)
+
+    x_tr, x_tmp, y_tr, y_tmp = train_test_split(
+        x, y, test_size=0.30, stratify=y, random_state=SEED
+    )
+    x_va, x_te, y_va, y_te = train_test_split(
+        x_tmp, y_tmp, test_size=0.50, stratify=y_tmp, random_state=SEED
+    )
+    print(f"Train: {len(x_tr)} | Val: {len(x_va)} | Test: {len(x_te)}")
+
+    tr_ds = SignalDataset(x_tr, y_tr)
+    va_ds = SignalDataset(x_va, y_va)
+    te_ds = SignalDataset(x_te, y_te)
+
+    counts = np.bincount(y_tr, minlength=len(CLASS_NAMES))
+    sample_weights = 1.0 / np.maximum(counts[y_tr], 1)
+    sampler = WeightedRandomSampler(
+        weights=torch.tensor(sample_weights, dtype=torch.float32),
+        num_samples=len(sample_weights),
+        replacement=True,
+    )
+
+    tr_loader = DataLoader(tr_ds, batch_size=BATCH_SIZE, sampler=sampler)
+    va_loader = DataLoader(va_ds, batch_size=BATCH_SIZE)
+    te_loader = DataLoader(te_ds, batch_size=BATCH_SIZE)
+
+    model = RDEClassifier(
+        input_dim=x.shape[1],
+        hidden_dims=HIDDEN_DIMS,
+        num_classes=len(CLASS_NAMES),
+        dropout=DROPOUT,
+    ).to(DEVICE)
+    print(f"Parameters: {sum(p.numel() for p in model.parameters()):,}\n")
+
+    class_weights = torch.tensor(
+        safe_class_weights(y_tr, len(CLASS_NAMES)), dtype=torch.float32, device=DEVICE
+    )
+    criterion = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=0.03)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="max", factor=0.5, patience=6
+    )
+
+    best_val_f1 = -1.0
+    patience = 0
+    history = {"train_loss": [], "val_loss": [], "val_acc": [], "val_macro_f1": []}
+
+    print(f"{'Epoch':>6}  {'TrLoss':>8}  {'VaLoss':>8}  {'VaAcc':>7}  {'VaF1':>7}")
+    print("-" * 52)
+
+    for epoch in range(1, EPOCHS + 1):
+        model.train()
+        tr_loss = 0.0
+
+        for xb, yb in tr_loader:
+            xb = xb.to(DEVICE)
+            yb = yb.to(DEVICE)
+
+            optimizer.zero_grad()
+            logits = model(xb)
+            loss = criterion(logits, yb)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+
+            tr_loss += loss.item() * len(yb)
+
+        tr_loss /= max(len(x_tr), 1)
+
+        va_acc, va_loss, va_f1, _, _ = evaluate(model, va_loader, criterion)
+        scheduler.step(va_f1)
+
+        history["train_loss"].append(tr_loss)
+        history["val_loss"].append(va_loss)
+        history["val_acc"].append(va_acc)
+        history["val_macro_f1"].append(va_f1)
+
+        if epoch == 1 or epoch % 5 == 0:
+            print(f"{epoch:>6}  {tr_loss:>8.4f}  {va_loss:>8.4f}  {va_acc:>7.4f}  {va_f1:>7.4f}")
+
+        improved = va_f1 > best_val_f1 + 1e-5
+        if improved:
+            best_val_f1 = va_f1
+            patience = 0
+            torch.save(
+                {
+                    "model_state": model.state_dict(),
+                    "input_dim": int(x.shape[1]),
+                    "hidden_dims": HIDDEN_DIMS,
+                    "num_classes": len(CLASS_NAMES),
+                    "dropout": DROPOUT,
+                    "scalar_features": SCALAR_FEATURES,
+                    "label_classes": CLASS_NAMES,
+                    "val_acc": float(va_acc),
+                    "val_macro_f1": float(va_f1),
+                },
+                "models/rde/best_model.pt",
+            )
+        else:
+            patience += 1
+            if patience >= STOP:
+                print(f"\nEarly stop @ epoch {epoch}")
+                break
+
+    print(f"\nBest Val Macro-F1: {best_val_f1:.4f}")
+
+    with open("models/rde/training_history.json", "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2)
+
+    ckpt = torch.load("models/rde/best_model.pt", map_location=DEVICE, weights_only=False)
+    model.load_state_dict(ckpt["model_state"])
+
+    te_acc, te_loss, te_f1, preds, labels = evaluate(model, te_loader, criterion)
+
+    print("\n" + "=" * 55)
+    print("TEST RESULTS")
+    print("=" * 55)
+    print(f"Accuracy: {te_acc:.4f}  |  Loss: {te_loss:.4f}  |  Macro-F1: {te_f1:.4f}\n")
+
+    print(
+        classification_report(
+            labels,
+            preds,
+            labels=list(range(len(CLASS_NAMES))),
+            target_names=CLASS_NAMES,
+            digits=3,
+            zero_division=0,
+        )
+    )
+
+    cm = confusion_matrix(labels, preds, labels=list(range(len(CLASS_NAMES))))
+    cm_df = pd.DataFrame(
+        cm,
+        index=[f"act_{c}" for c in CLASS_NAMES],
+        columns=[f"pred_{c}" for c in CLASS_NAMES],
+    )
+    print("Confusion Matrix:")
+    print(cm_df.to_string())
+
+    results = {
+        "test_accuracy": float(te_acc),
+        "test_macro_f1": float(te_f1),
+        "best_val_macro_f1": float(best_val_f1),
+        "per_class": classification_report(
+            labels,
+            preds,
+            labels=list(range(len(CLASS_NAMES))),
+            target_names=CLASS_NAMES,
+            output_dict=True,
+            zero_division=0,
+        ),
+    }
+    with open("models/rde/test_results.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+
+    print("\nSaved models/rde/best_model.pt")
+
+    # First-layer absolute weights as a rough feature-importance proxy.
+    first_linear = model.net[0]
+    weights = first_linear.weight.detach().abs().mean(dim=0).cpu().numpy()
+    scalar_imp = list(zip(SCALAR_FEATURES, weights[: len(SCALAR_FEATURES)]))
+    scalar_imp.sort(key=lambda t: t[1], reverse=True)
+
+    print("\nTop scalar feature importances:")
+    for name, value in scalar_imp:
+        bar = "#" * max(1, int(value * 45))
+        print(f"  {name:<22} {value:.4f}  {bar}")
 
 
-# ── Final test evaluation ─────────────────────────────────
-checkpoint = torch.load(
-    "models/rde/best_model.pt",
-    map_location=DEVICE,
-    weights_only=False   # 🔥 FIX
-)
-model.load_state_dict(checkpoint["model_state"])
-
-test_acc, test_loss, preds, labels = evaluate(test_loader)
-
-print("\n" + "=" * 55)
-print("FINAL TEST RESULTS")
-print("=" * 55)
-print(f"Test Accuracy : {test_acc:.4f}")
-print(f"Test Loss     : {test_loss:.4f}")
-print()
-print("Per-class Report:")
-print(classification_report(labels, preds,
-      target_names=le.classes_, digits=3))
-
-print("Confusion Matrix (rows=actual, cols=predicted):")
-cm = confusion_matrix(labels, preds)
-cm_df = pd.DataFrame(cm,
-    index=[f"actual_{c}"    for c in le.classes_],
-    columns=[f"pred_{c}"    for c in le.classes_])
-print(cm_df.to_string())
-
-# Save test results for paper
-results = {
-    "test_accuracy": test_acc,
-    "test_loss":     test_loss,
-    "best_val_acc":  best_val_acc,
-    "per_class":     classification_report(
-                        labels, preds,
-                        target_names=le.classes_,
-                        output_dict=True)
-}
-with open("models/rde/test_results.json", "w") as f:
-    json.dump(results, f, indent=2)
-
-print(f"\n✅ Model saved to models/rde/best_model.pt")
-print(f"✅ Results saved to models/rde/test_results.json")
+if __name__ == "__main__":
+    main()

@@ -1,460 +1,37 @@
-# scripts/02_extract_signals.py
-"""
-import torch
-import numpy as np
-import json
-import pandas as pd
-import spacy
-from transformers import AutoTokenizer, AutoModel
-from tqdm import tqdm
-
-# ── Config ──────────────────────────────────────────────
-MODEL_NAME = "meta-llama/Llama-3.2-1B"   # Small encoder for speed
-# Alternatively: "mistralai/Mistral-7B-v0.1" for richer signals
-BATCH_SIZE = 8
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MAX_LEN = 256
-
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModel.from_pretrained(MODEL_NAME, output_attentions=True).to(DEVICE)
-model.eval()
-nlp = spacy.load("en_core_web_sm")
-
-with open("data/processed/unified_dataset.json") as f:
-    data = json.load(f)
-
-# ── Signal 1: Prompt Embedding ───────────────────────────
-def get_embedding(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN, truncation=True,
-                       padding=True).to(DEVICE)
-    with torch.no_grad():
-        out = model(**inputs)
-    # CLS token from last hidden state
-    return out.last_hidden_state[:, 0, :].squeeze().cpu().numpy()
-
-# ── Signal 2: Attention Entropy ──────────────────────────
-def attention_entropy(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN, truncation=True).to(DEVICE)
-    with torch.no_grad():
-        out = model(**inputs)
-    # out.attentions: tuple of (batch, heads, seq, seq)
-    # Average across all layers and heads
-    entropies = []
-    for layer_attn in out.attentions:
-        # layer_attn: (1, num_heads, seq_len, seq_len)
-        p = layer_attn.squeeze(0)           # (heads, seq, seq)
-        p = p + 1e-9                         # numerical stability
-        H = -torch.sum(p * torch.log(p), dim=-1)   # (heads, seq)
-        entropies.append(H.mean().item())
-    return float(np.mean(entropies))
-
-# ── Signal 3: Token Varentropy ───────────────────────────
-def token_varentropy(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN, truncation=True).to(DEVICE)
-    with torch.no_grad():
-        out = model(**inputs)
-    hidden = out.last_hidden_state.squeeze(0)   # (seq_len, hidden)
-    # Project to vocab logits and compute per-token entropy
-    logits = model.lm_head(hidden) if hasattr(model, 'lm_head') else hidden @ model.embed_tokens.weight.T
-    probs = torch.softmax(logits, dim=-1) + 1e-9
-    token_entropy = -torch.sum(probs * torch.log(probs), dim=-1)  # (seq_len,)
-    return float(token_entropy.var().item())
-
-# ── Signal 4: Perplexity ─────────────────────────────────
-def compute_perplexity(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN, truncation=True).to(DEVICE)
-    input_ids = inputs["input_ids"]
-    with torch.no_grad():
-        out = model(**inputs, labels=input_ids)
-    # out.loss = mean NLL
-    return float(torch.exp(out.loss).item()) if hasattr(out, 'loss') and out.loss else 0.0
-
-# ── Signal 5: Syntax Complexity ──────────────────────────
-def syntax_complexity(text):
-    doc = nlp(text[:1000])          # cap for speed
-    sentences = list(doc.sents)
-    if not sentences:
-        return 0.0, 0, 0.0
-    max_depth = 0
-    for token in doc:
-        depth = 0
-        t = token
-        while t.head != t:
-            t = t.head
-            depth += 1
-        max_depth = max(max_depth, depth)
-    clause_count = sum(1 for t in doc if t.dep_ in ("relcl","advcl","ccomp","xcomp"))
-    avg_sent_len = np.mean([len(s) for s in sentences])
-    return float(max_depth), int(clause_count), float(avg_sent_len)
-
-# ── Main Extraction Loop ──────────────────────────────────
-records = []
-for item in tqdm(data, desc="Extracting signals"):
-    q = item["question"]
-    try:
-        emb = get_embedding(q)
-        attn_ent = attention_entropy(q)
-        var_ent = token_varentropy(q)
-        ppl = compute_perplexity(q)
-        tree_depth, clause_cnt, avg_slen = syntax_complexity(q)
-
-        records.append({
-            "id": item["id"],
-            "source": item["source"],
-            "question": q,
-            "attn_entropy": attn_ent,
-            "varentropy": var_ent,
-            "perplexity": ppl,
-            "tree_depth": tree_depth,
-            "clause_count": clause_cnt,
-            "avg_sent_len": avg_slen,
-            "embedding": emb.tolist(),    # stored as list
-            "raw_difficulty": item["raw_difficulty"]
-        })
-    except Exception as e:
-        print(f"Skipped {item['id']}: {e}")
-
-df = pd.DataFrame(records)
-df.to_json("data/features/signals.json", orient="records", indent=2)
-# Also save a flat CSV (without embedding) for inspection
-df.drop(columns=["embedding"]).to_csv("data/features/signals_flat.csv", index=False)
-print(f"Saved {len(df)} signal records.")
-
-
-
-# scripts/02_extract_signals.py
-
-import torch
-import numpy as np
-import json
-import pandas as pd
-import os
-import spacy
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from tqdm import tqdm
-
-# ── Config ──────────────────────────────────────────────
-MODEL_NAME = "distilgpt2"   # ✅ Open model (no access issues)
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MAX_LEN = 256
-
-# Create folders
-os.makedirs("data/features", exist_ok=True)
-
-# Load model
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_NAME,
-    output_attentions=True
-).to(DEVICE)
-
-model.eval()
-nlp = spacy.load("en_core_web_sm")
-
-# Load data
-with open("data/processed/unified_dataset.json") as f:
-    data = json.load(f)
-
-# ── Signal 1: Embedding (mean pooled) ────────────────────
-def get_embedding(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN,
-                       truncation=True,
-                       padding=True).to(DEVICE)
-
-    with torch.no_grad():
-        out = model(**inputs, output_hidden_states=True)
-
-    hidden = out.hidden_states[-1]  # last layer
-    return hidden.mean(dim=1).squeeze().cpu().numpy()
-
-# ── Signal 2: Attention Entropy ──────────────────────────
-def attention_entropy(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN,
-                       truncation=True).to(DEVICE)
-
-    with torch.no_grad():
-        out = model(**inputs)
-
-    entropies = []
-    for layer_attn in out.attentions:
-        p = layer_attn.squeeze(0)
-        p = p + 1e-9
-        H = -torch.sum(p * torch.log(p), dim=-1)
-        entropies.append(H.mean().item())
-
-    return float(np.mean(entropies))
-
-# ── Signal 3: Token Varentropy ───────────────────────────
-def token_varentropy(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN,
-                       truncation=True).to(DEVICE)
-
-    with torch.no_grad():
-        out = model(**inputs)
-
-    logits = out.logits.squeeze(0)
-    probs = torch.softmax(logits, dim=-1) + 1e-9
-    entropy = -torch.sum(probs * torch.log(probs), dim=-1)
-
-    return float(entropy.var().item())
-
-# ── Signal 4: Perplexity ─────────────────────────────────
-def compute_perplexity(text):
-    inputs = tokenizer(text, return_tensors="pt",
-                       max_length=MAX_LEN,
-                       truncation=True).to(DEVICE)
-
-    input_ids = inputs["input_ids"]
-
-    with torch.no_grad():
-        out = model(**inputs, labels=input_ids)
-
-    return float(torch.exp(out.loss).item())
-
-# ── Signal 5: Syntax Complexity ──────────────────────────
-def syntax_complexity(text):
-    doc = nlp(text[:1000])
-
-    sentences = list(doc.sents)
-    if not sentences:
-        return 0.0, 0, 0.0
-
-    max_depth = 0
-    for token in doc:
-        depth = 0
-        t = token
-        while t.head != t:
-            t = t.head
-            depth += 1
-        max_depth = max(max_depth, depth)
-
-    clause_count = sum(1 for t in doc if t.dep_ in ("relcl","advcl","ccomp","xcomp"))
-    avg_sent_len = np.mean([len(s) for s in sentences])
-
-    return float(max_depth), int(clause_count), float(avg_sent_len)
-
-# ── Main Loop ────────────────────────────────────────────
-records = []
-
-for item in tqdm(data[:2000], desc="Extracting signals"):  # 🔥 limit for speed
-    q = item["question"]
-
-    try:
-        emb = get_embedding(q)
-        attn_ent = attention_entropy(q)
-        var_ent = token_varentropy(q)
-        ppl = compute_perplexity(q)
-        tree_depth, clause_cnt, avg_slen = syntax_complexity(q)
-
-        records.append({
-            "id": item["id"],
-            "source": item["source"],
-            "question": q,
-            "attn_entropy": attn_ent,
-            "varentropy": var_ent,
-            "perplexity": ppl,
-            "tree_depth": tree_depth,
-            "clause_count": clause_cnt,
-            "avg_sent_len": avg_slen,
-            "embedding": emb.tolist(),
-            "raw_difficulty": item["raw_difficulty"]
-        })
-
-    except Exception as e:
-        print(f"Skipped {item['id']}: {e}")
-
-# Save outputs
-df = pd.DataFrame(records)
-
-df.to_json("data/features/signals.json", orient="records", indent=2)
-df.drop(columns=["embedding"]).to_csv("data/features/signals_flat.csv", index=False)
-
-print(f"Saved {len(df)} signal records.")
-
-
-# scripts/02_extract_signals.py
-
-import torch
-import numpy as np
-import json
-import pandas as pd
-import os
-import spacy
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from tqdm import tqdm
-
-# ── Config ──────────────────────────────────────────────
-MODEL_NAME = "distilgpt2"   # ✅ open + fast
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MAX_LEN = 256
-LIMIT = 1000   # 🔥 reduce for speed (increase later)
-
-# Create folders
-os.makedirs("data/features", exist_ok=True)
-
-# Load tokenizer + fix padding issue ✅
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token
-
-# Load model
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_NAME,
-    output_attentions=True
-).to(DEVICE)
-
-model.eval()
-
-# Load spaCy
-nlp = spacy.load("en_core_web_sm")
-
-# Load dataset
-with open("data/processed/unified_dataset.json") as f:
-    data = json.load(f)
-
-# ── Optimized Signal Extraction (Single Forward Pass) ────
-def extract_all_signals(text):
-    inputs = tokenizer(
-        text,
-        return_tensors="pt",
-        max_length=MAX_LEN,
-        truncation=True,
-        padding=True
-    ).to(DEVICE)
-
-    with torch.no_grad():
-        out = model(
-            **inputs,
-            labels=inputs["input_ids"],
-            output_hidden_states=True
-        )
-
-    # ── Embedding (mean pooling) ──
-    hidden = out.hidden_states[-1]
-    embedding = hidden.mean(dim=1).squeeze().cpu().numpy()
-
-    # ── Attention Entropy ──
-    attn_entropy = 0.0
-    if out.attentions:
-        entropies = []
-        for layer_attn in out.attentions:
-            p = layer_attn.squeeze(0) + 1e-9
-            H = -torch.sum(p * torch.log(p), dim=-1)
-            entropies.append(H.mean().item())
-        attn_entropy = float(np.mean(entropies))
-
-    # ── Token Varentropy ──
-    logits = out.logits.squeeze(0)
-    probs = torch.softmax(logits, dim=-1) + 1e-9
-    entropy = -torch.sum(probs * torch.log(probs), dim=-1)
-    varentropy = float(entropy.var().item())
-
-    # ── Perplexity ──
-    perplexity = float(torch.exp(out.loss).item())
-
-    return embedding, attn_entropy, varentropy, perplexity
-
-
-# ── Syntax Complexity ────────────────────────────────────
-def syntax_complexity(text):
-    doc = nlp(text[:1000])
-
-    sentences = list(doc.sents)
-    if not sentences:
-        return 0.0, 0, 0.0
-
-    max_depth = 0
-    for token in doc:
-        depth = 0
-        t = token
-        while t.head != t:
-            t = t.head
-            depth += 1
-        max_depth = max(max_depth, depth)
-
-    clause_count = sum(
-        1 for t in doc if t.dep_ in ("relcl", "advcl", "ccomp", "xcomp")
-    )
-
-    avg_sent_len = np.mean([len(s) for s in sentences])
-
-    return float(max_depth), int(clause_count), float(avg_sent_len)
-
-
-# ── Main Loop ────────────────────────────────────────────
-records = []
-
-for item in tqdm(data[:LIMIT], desc="Extracting signals"):
-    q = item["question"]
-
-    try:
-        emb, attn_ent, var_ent, ppl = extract_all_signals(q)
-        tree_depth, clause_cnt, avg_slen = syntax_complexity(q)
-
-        records.append({
-            "id": item["id"],
-            "source": item["source"],
-            "question": q,
-            "attn_entropy": attn_ent,
-            "varentropy": var_ent,
-            "perplexity": ppl,
-            "tree_depth": tree_depth,
-            "clause_count": clause_cnt,
-            "avg_sent_len": avg_slen,
-            "embedding": emb.tolist(),
-            "raw_difficulty": item["raw_difficulty"]
-        })
-
-    except Exception as e:
-        print(f"Skipped {item['id']}: {e}")
-
-# ── Save Results ─────────────────────────────────────────
-df = pd.DataFrame(records)
-
-df.to_json("data/features/signals.json", orient="records", indent=2)
-df.drop(columns=["embedding"]).to_csv(
-    "data/features/signals_flat.csv", index=False
-)
-
-print(f"✅ Saved {len(df)} signal records.")
-"""
-# scripts/02_extract_signals.py
-# FIX: Uses stratified sampling so all sources are represented
-#      in the extracted signals (not just gsm8k top-1000).
-
-import torch
-import numpy as np
-import json
-import pandas as pd
-import os
-import spacy
+# scripts/02b_extract_signals_v2.py
+# REPLACES 02_extract_signals.py
+# 
+# KEY CHANGE: Adds 6 math-aware lexical features that actually
+# separate hard (proof/advanced math) from medium (word problems).
+# These are computed purely with regex + spacy — no LLM needed.
+#
+# New features:
+#   math_symbol_density  — ratio of math symbols (∀∃∈^√∑) per token
+#   proof_keyword_count  — "prove","show that","derive","iff","QED" etc.
+#   equation_count       — number of equation-like substrings (x^n, f(x))
+#   abstract_noun_ratio  — ratio of abstract/formal nouns (theorem, lemma)
+#   avg_word_length      — longer words = more technical vocabulary
+#   number_density       — ratio of numeric tokens (useful for word problems)
+
+import torch, numpy as np, json, pandas as pd, os, re, spacy
+import torch.nn.functional as F
 from collections import defaultdict
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from tqdm import tqdm
 
-# ── Config ───────────────────────────────────────────────
-MODEL_NAME  = "distilgpt2"
-DEVICE      = "cuda" if torch.cuda.is_available() else "cpu"
-MAX_LEN     = 256
+MODEL_NAME = "distilgpt2"
+DEVICE     = "cuda" if torch.cuda.is_available() else "cpu"
+MAX_LEN    = 256
 
-# CRITICAL FIX: sample proportionally per source, not just top-N
 SAMPLES_PER_SOURCE = {
-    "gsm8k":              400,   # easy
-    "mbpp":               200,   # easy
-    "math_algebra":       250,   # hard
-    "math_geometry":      150,   # hard
-    "math_number_theory": 150,   # hard
-    "mmlu":               100,   # medium
-    "bbh":                150,   # medium
+    "gsm8k":              400,
+    "mbpp":               200,
+    "math_algebra":       250,
+    "math_geometry":      150,
+    "math_number_theory": 150,
+    "mmlu":               100,
+    "bbh":                150,
 }
-# Total = ~1400 samples, balanced across difficulty tiers
 
 os.makedirs("data/features", exist_ok=True)
 
@@ -462,9 +39,9 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_NAME, output_attentions=True
-).to(DEVICE)
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME).to(DEVICE)
+if hasattr(model.config, "loss_type") and model.config.loss_type is None:
+    model.config.loss_type = "ForCausalLMLoss"
 model.eval()
 
 nlp = spacy.load("en_core_web_sm")
@@ -472,112 +49,178 @@ nlp = spacy.load("en_core_web_sm")
 with open("data/processed/unified_dataset.json") as f:
     raw_data = json.load(f)
 
-# ── Stratified sampling ───────────────────────────────────
+# Stratified sampling
 buckets = defaultdict(list)
 for item in raw_data:
     buckets[item["source"]].append(item)
 
 data = []
 for src, limit in SAMPLES_PER_SOURCE.items():
-    pool = buckets.get(src, [])
+    pool   = buckets.get(src, [])
     chosen = pool[:limit]
     data.extend(chosen)
-    print(f"  {src}: {len(chosen)} samples selected (pool: {len(pool)})")
+    print(f"  {src}: {len(chosen)} samples")
 
-print(f"\nTotal for extraction: {len(data)}")
+print(f"\nTotal: {len(data)}")
 
-# ── Single forward pass extracts all 4 neural signals ─────
-def extract_all_signals(text):
-    inputs = tokenizer(
-        text, return_tensors="pt",
-        max_length=MAX_LEN, truncation=True, padding=True
-    ).to(DEVICE)
+# ── Lexical math features ──────────────────────────────────
+PROOF_KEYWORDS = {
+    "prove", "proof", "show that", "demonstrate", "derive",
+    "theorem", "lemma", "corollary", "iff", "if and only if",
+    "qed", "contradiction", "induction", "base case",
+    "assume", "suppose", "let", "therefore", "hence",
+    "it follows", "we conclude", "by definition"
+}
+MATH_SYMBOLS_RE = re.compile(r'[∀∃∈∉⊆⊇∩∪∑∏√∞≤≥≠≡±×÷\^]|'
+                              r'\\[a-zA-Z]+|'     # LaTeX \alpha etc.
+                              r'\d+\^\d+|'        # x^2
+                              r'[a-z]\([a-z]\)')  # f(x)
 
+ABSTRACT_NOUNS = {
+    "theorem", "lemma", "corollary", "proof", "conjecture",
+    "proposition", "axiom", "definition", "hypothesis",
+    "equation", "polynomial", "integer", "rational", "irrational",
+    "prime", "modulo", "matrix", "vector", "eigenvalue",
+    "derivative", "integral", "limit", "convergence"
+}
+
+def math_aware_features(text):
+    text_lower = text.lower()
+    tokens     = text_lower.split()
+    n_tokens   = max(len(tokens), 1)
+
+    # 1. Proof keyword count (normalized)
+    proof_kw = sum(1 for kw in PROOF_KEYWORDS if kw in text_lower)
+    proof_kw_norm = proof_kw / n_tokens
+
+    # 2. Math symbol density
+    math_syms  = len(MATH_SYMBOLS_RE.findall(text))
+    math_density = math_syms / n_tokens
+
+    # 3. Equation count (patterns like x^2, f(x), x_n, a_ij)
+    eq_count = len(re.findall(
+        r'[a-zA-Z]\^?\d+|[a-zA-Z]_\{?[a-zA-Z0-9]+\}?|'
+        r'[a-zA-Z]\([a-zA-Z0-9,\s]+\)', text))
+    eq_density = eq_count / n_tokens
+
+    # 4. Abstract noun ratio
+    abs_nouns  = sum(1 for t in tokens if t.strip('.,;:') in ABSTRACT_NOUNS)
+    abs_ratio  = abs_nouns / n_tokens
+
+    # 5. Average word length (technical text has longer words)
+    clean_tokens = [t.strip('.,;:!?()[]{}') for t in tokens if t.strip('.,;:!?()[]{}')]
+    avg_word_len = float(np.mean([len(t) for t in clean_tokens])) if clean_tokens else 0.0
+
+    # 6. Number density (word problems have lots of numbers)
+    num_tokens   = sum(1 for t in tokens if re.match(r'^\d+\.?\d*$', t))
+    num_density  = num_tokens / n_tokens
+
+    return proof_kw_norm, math_density, eq_density, abs_ratio, avg_word_len, num_density
+
+
+# ── Neural signals (same as before) ───────────────────────
+def extract_neural_signals(text):
+    inputs = tokenizer(text, return_tensors="pt",
+                       max_length=MAX_LEN, truncation=True,
+                       padding=True).to(DEVICE)
     with torch.no_grad():
         out = model(
             **inputs,
-            labels=inputs["input_ids"],
-            output_hidden_states=True
+            output_hidden_states=True,
+            output_attentions=True,
         )
 
-    # Signal 1: Embedding (mean pooling of last hidden layer)
     hidden    = out.hidden_states[-1]
     embedding = hidden.mean(dim=1).squeeze().cpu().numpy()
 
-    # Signal 2: Attention Entropy
     attn_entropy = 0.0
     if out.attentions:
-        entropies = []
-        for layer_attn in out.attentions:
-            p = layer_attn.squeeze(0) + 1e-9
+        ents = []
+        for la in out.attentions:
+            p = la.squeeze(0) + 1e-9
             H = -torch.sum(p * torch.log(p), dim=-1)
-            entropies.append(H.mean().item())
-        attn_entropy = float(np.mean(entropies))
+            ents.append(H.mean().item())
+        attn_entropy = float(np.mean(ents))
 
-    # Signal 3: Token Varentropy
-    logits  = out.logits.squeeze(0)
-    probs   = torch.softmax(logits, dim=-1) + 1e-9
-    entropy = -torch.sum(probs * torch.log(probs), dim=-1)
+    logits     = out.logits.squeeze(0)
+    probs      = torch.softmax(logits, dim=-1) + 1e-9
+    entropy    = -torch.sum(probs * torch.log(probs), dim=-1)
     varentropy = float(entropy.var().item())
 
-    # Signal 4: Perplexity
-    perplexity = float(torch.exp(out.loss).item())
+    shift_logits = out.logits[:, :-1, :].contiguous()
+    shift_labels = inputs["input_ids"][:, 1:].contiguous()
+    ce = F.cross_entropy(
+        shift_logits.view(-1, shift_logits.size(-1)),
+        shift_labels.view(-1),
+        ignore_index=tokenizer.pad_token_id,
+    )
+    perplexity = float(torch.exp(ce).item())
 
     return embedding, attn_entropy, varentropy, perplexity
 
 
-# ── Signal 5: Syntax complexity (no model needed) ─────────
-def syntax_complexity(text):
-    doc       = nlp(text[:1000])
-    sentences = list(doc.sents)
-    if not sentences:
+# ── Syntax features ───────────────────────────────────────
+def syntax_features(text):
+    doc   = nlp(text[:1000])
+    sents = list(doc.sents)
+    if not sents:
         return 0.0, 0, 0.0
-
     max_depth = 0
     for token in doc:
-        depth, t = 0, token
+        d, t = 0, token
         while t.head != t:
-            t = t.head
-            depth += 1
-        max_depth = max(max_depth, depth)
-
-    clause_count = sum(
-        1 for t in doc if t.dep_ in ("relcl", "advcl", "ccomp", "xcomp")
-    )
-    avg_sent_len = float(np.mean([len(s) for s in sentences]))
-
-    return float(max_depth), int(clause_count), avg_sent_len
+            t = t.head; d += 1
+        max_depth = max(max_depth, d)
+    clause_count = sum(1 for t in doc
+                       if t.dep_ in ("relcl","advcl","ccomp","xcomp"))
+    avg_slen = float(np.mean([len(s) for s in sents]))
+    return float(max_depth), clause_count, avg_slen
 
 
-# ── Main extraction loop ───────────────────────────────────
+# ── Main loop ─────────────────────────────────────────────
 records = []
 
-for item in tqdm(data, desc="Extracting signals"):
+for item in tqdm(data, desc="Extracting signals v2"):
     q = item["question"]
     try:
-        emb, attn_ent, var_ent, ppl = extract_all_signals(q)
-        tree_depth, clause_cnt, avg_slen = syntax_complexity(q)
+        emb, attn_ent, var_ent, ppl = extract_neural_signals(q)
+        tree_depth, clause_cnt, avg_slen = syntax_features(q)
+        (proof_kw, math_sym, eq_dens,
+         abs_ratio, avg_wlen, num_dens) = math_aware_features(q)
 
         records.append({
-            "id":           item["id"],
-            "source":       item["source"],
-            "question":     q,
-            "attn_entropy": attn_ent,
-            "varentropy":   var_ent,
-            "perplexity":   ppl,
-            "tree_depth":   tree_depth,
-            "clause_count": clause_cnt,
-            "avg_sent_len": avg_slen,
-            "embedding":    emb.tolist(),
-            "raw_difficulty": item["raw_difficulty"]
+            "id":               item["id"],
+            "source":           item["source"],
+            "question":         q,
+            # original neural signals
+            "attn_entropy":     attn_ent,
+            "varentropy":       var_ent,
+            "perplexity":       ppl,
+            # syntax signals
+            "tree_depth":       tree_depth,
+            "clause_count":     clause_cnt,
+            "avg_sent_len":     avg_slen,
+            # NEW math-aware signals
+            "proof_kw_density": proof_kw,
+            "math_sym_density": math_sym,
+            "eq_density":       eq_dens,
+            "abstract_ratio":   abs_ratio,
+            "avg_word_len":     avg_wlen,
+            "num_density":      num_dens,
+            # embedding
+            "embedding":        emb.tolist(),
+            "raw_difficulty":   item["raw_difficulty"]
         })
     except Exception as e:
         print(f"Skipped {item['id']}: {e}")
 
 df = pd.DataFrame(records)
-df.to_json("data/features/signals.json", orient="records", indent=2)
-df.drop(columns=["embedding"]).to_csv("data/features/signals_flat.csv", index=False)
+df.to_json("data/features/signals_v2.json", orient="records", indent=2)
+df.drop(columns=["embedding"]).to_csv(
+    "data/features/signals_v2_flat.csv", index=False)
 
-print(f"\n✅ Saved {len(df)} signal records.")
-print("\nSource distribution in extracted signals:")
-print(df["source"].value_counts())
+print(f"\n✅ Saved {len(df)} records to data/features/signals_v2.json")
+print("\nSample math-aware feature means per source:")
+print(df.groupby("source")[
+    ["proof_kw_density","math_sym_density","eq_density","abstract_ratio"]
+].mean().round(4).to_string())

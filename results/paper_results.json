@@ -1,0 +1,30 @@
+{
+  "n_samples": 30,
+  "systems": {
+    "always_fast": {
+      "accuracy": 0.6666666666666666,
+      "avg_tokens": 42.1,
+      "total_tokens": 1263
+    },
+    "always_cot": {
+      "accuracy": 0.5333333333333333,
+      "avg_tokens": 63.666666666666664,
+      "total_tokens": 1910
+    },
+    "always_bon": {
+      "accuracy": 0.5333333333333333,
+      "avg_tokens": 127.33333333333333,
+      "total_tokens": 3820
+    },
+    "oracle": {
+      "accuracy": 0.6,
+      "avg_tokens": 49.7,
+      "total_tokens": 1491
+    },
+    "arc": {
+      "accuracy": 0.5333333333333333,
+      "avg_tokens": 63.666666666666664,
+      "total_tokens": 1910
+    }
+  }
+}

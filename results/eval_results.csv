@@ -1,0 +1,468 @@
+question,true_diff,gold,arc_diff,arc_mode,arc_answer,arc_tokens,arc_correct,arc_time,fast_answer,fast_tokens,fast_correct,fast_time,cot_answer,cot_tokens,cot_correct,cot_time,bon_answer,bon_tokens,bon_correct,bon_time,oracle_answer,oracle_tokens,oracle_correct,oracle_time
+What is 15 + 27?,easy,42,hard,best_of_n,"To solve 16 + 17, follow these steps:
+
+1. Start with the number 18 (16 and 1).
+2. Add the next number, 1, to the sum of 1 and 7.
+3. The result is 25.
+
+So, 20",64,0,278.1,15 plus 28 equals 43.,12,0,17.1,"To solve 16 + 17, follow these steps:
+
+1. Start with the number 18 (16 and 1).
+2. Add the next number, 1, to the sum of 1 and 7.
+3. The result is 25.
+
+So, 20",64,0,71.99,"To solve 16 + 17, follow these steps:
+
+1. Start with the number 18 (16 and 1).
+2. Add the next number, 1, to the sum of 1 and 7.
+3. The result is 25.
+
+So, 20",128,0,128,15 plus 28 equals 43.,12,0,13.96
+What is 8 × 7?,easy,56,hard,best_of_n,"To solve the problem of multiplying 8 by 7, follow these steps:
+
+1. **Understand the problem**: We need to multiply 8 (which is 10 - 2) by 1 (which can be thought of as 1/10).
+
+2. **Set up the multiplication**:",64,0,127.74,8 ×7 equals 56.,9,1,26.2,"To solve the problem of multiplying 8 by 7, follow these steps:
+
+1. **Understand the problem**: We need to multiply 8 (which is 10 - 2) by 1 (which can be thought of as 1/10).
+
+2. **Set up the multiplication**:",64,0,74.47,"To solve the problem of multiplying 8 by 7, follow these steps:
+
+1. **Understand the problem**: We need to multiply 8 (which is 10 - 2) by 1 (which can be thought of as 1/10).
+
+2. **Set up the multiplication**:",128,0,128,8 ×7 equals 56.,9,1,9.28
+What is the capital of France?,easy,paris,hard,best_of_n,"To determine the capital city of France, I'll follow these steps:
+
+1. Recall the capital cities of other European countries.
+2. Cross-reference these cities with the capital for France.
+3. Confirm the result.
+
+Step 1: The capital cities for other European nations are:
+- London (UK)
+- Paris (",64,1,79.79,The capital of the French Republic is Paris.,10,1,14.14,"To determine the capital city of France, I'll follow these steps:
+
+1. Recall the capital cities of other European countries.
+2. Cross-reference these cities with the capital for France.
+3. Confirm the result.
+
+Step 1: The capital cities for other European nations are:
+- London (UK)
+- Paris (",64,1,46.29,"To determine the capital city of France, I'll follow these steps:
+
+1. Recall the capital cities of other European countries.
+2. Cross-reference these cities with the capital for France.
+3. Confirm the result.
+
+Step 1: The capital cities for other European nations are:
+- London (UK)
+- Paris (",128,1,128,The capital of the French Republic is Paris.,10,1,8.24
+What is the capital of Japan?,easy,tokyo,hard,best_of_n,"To determine the capital city of Japan, I'll follow these steps:
+
+1. Recall the capital cities of other countries.
+2. Cross-reference these cities with Japan's official name.
+3. Confirm the capital's name.
+
+Step 1: The capital cities for other countries are:
+- Tokyo, Japan
+- Kyoto,",64,1,89.07,The capital of the country is Tokyo.,9,1,15.6,"To determine the capital city of Japan, I'll follow these steps:
+
+1. Recall the capital cities of other countries.
+2. Cross-reference these cities with Japan's official name.
+3. Confirm the capital's name.
+
+Step 1: The capital cities for other countries are:
+- Tokyo, Japan
+- Kyoto,",64,1,57.46,"To determine the capital city of Japan, I'll follow these steps:
+
+1. Recall the capital cities of other countries.
+2. Cross-reference these cities with Japan's official name.
+3. Confirm the capital's name.
+
+Step 1: The capital cities for other countries are:
+- Tokyo, Japan
+- Kyoto,",128,1,128,The capital of the country is Tokyo.,9,1,7.43
+What is 100 - 37?,easy,63,hard,best_of_n,"To solve the problem \( 15 - 7 \), follow these steps:
+
+1. **Identify the numbers involved**: The numbers are 1 and 7.
+2. **Understand the operation**: You are subtracting 7 from 1.
+3. **Perform the subtraction**:
+   - Start",64,0,46.77,10 -3 = 7,8,0,6.94,"To solve the problem \( 15 - 7 \), follow these steps:
+
+1. **Identify the numbers involved**: The numbers are 1 and 7.
+2. **Understand the operation**: You are subtracting 7 from 1.
+3. **Perform the subtraction**:
+   - Start",64,0,39.02,"To solve the problem \( 15 - 7 \), follow these steps:
+
+1. **Identify the numbers involved**: The numbers are 1 and 7.
+2. **Understand the operation**: You are subtracting 7 from 1.
+3. **Perform the subtraction**:
+   - Start",128,0,128,10 -3 = 7,8,0,6.43
+Write a Python function to check if a number is even.,easy,def,hard,best_of_n,"Certainly! Here's a step-by-step guide to writing a Python program to check whether a given number is odd or even:
+
+1. **Understand the Problem**: 
+   - We need to determine if a given integer is even or odd.
+   - An integer is considered even if it is divisible by 2 without",64,0,44.54,"```python
+def is_even(num):
+    """"""
+    Check if a given number is an even number.
+
+    Parameters:
+    num (int): The number to check.
+
+    Returns:
+    bool: True if the number is odd, False if the is even.
+    """"""
+    
+    return num % 2 !=",64,1,41.04,"Certainly! Here's a step-by-step guide to writing a Python program to check whether a given number is odd or even:
+
+1. **Understand the Problem**: 
+   - We need to determine if a given integer is even or odd.
+   - An integer is considered even if it is divisible by 2 without",64,0,37.97,"Certainly! Here's a step-by-step guide to writing a Python program to check whether a given number is odd or even:
+
+1. **Understand the Problem**: 
+   - We need to determine if a given integer is even or odd.
+   - An integer is considered even if it is divisible by 2 without",128,0,128,"```python
+def is_even(num):
+    """"""
+    Check if a given number is an even number.
+
+    Parameters:
+    num (int): The number to check.
+
+    Returns:
+    bool: True if the number is odd, False if the is even.
+    """"""
+    
+    return num % 2 !=",64,1,37.77
+Write a Python function to reverse a string.,easy,def,hard,best_of_n,"Certainly! Below is a Python code snippet that defines a function to take a string as input and return its reverse. I'll walk you through the steps and then provide the final answer.
+
+### Steps to Reverse a String in Python
+
+1. **Understand the Problem**: Reverse a string.
+2. **Define the Function",64,1,44.46,"```python
+def reverse_string(s):
+    """"""
+    Reverses the given string.
+
+    Parameters:
+    s (str): The string to be reversed.
+
+    Returns:
+    str: The reversed string.
+    """"""
+    
+    return s[::-1]
+```",53,1,32.15,"Certainly! Below is a Python code snippet that defines a function to take a string as input and return its reverse. I'll walk you through the steps and then provide the final answer.
+
+### Steps to Reverse a String in Python
+
+1. **Understand the Problem**: Reverse a string.
+2. **Define the Function",64,1,37.85,"Certainly! Below is a Python code snippet that defines a function to take a string as input and return its reverse. I'll walk you through the steps and then provide the final answer.
+
+### Steps to Reverse a String in Python
+
+1. **Understand the Problem**: Reverse a string.
+2. **Define the Function",128,1,128,"```python
+def reverse_string(s):
+    """"""
+    Reverses the given string.
+
+    Parameters:
+    s (str): The string to be reversed.
+
+    Returns:
+    str: The reversed string.
+    """"""
+    
+    return s[::-1]
+```",53,1,34.17
+Find the LCM of 4 and 6.,easy,12,hard,best_of_n,"To find the Least Common Multiple (LCM) of 6 and 4, follow these steps:
+
+1. **Prime Factorization**:
+   - First, determine the prime factorization of each number.
+     - The prime factor of 12 (LCB of 2 and 3) is 2",64,1,45.06,"The LCM (Least Common Multiple) of 2 and 3 is 6, not 4.",23,0,14.84,"To find the Least Common Multiple (LCM) of 6 and 4, follow these steps:
+
+1. **Prime Factorization**:
+   - First, determine the prime factorization of each number.
+     - The prime factor of 12 (LCB of 2 and 3) is 2",64,1,38.67,"To find the Least Common Multiple (LCM) of 6 and 4, follow these steps:
+
+1. **Prime Factorization**:
+   - First, determine the prime factorization of each number.
+     - The prime factor of 12 (LCB of 2 and 3) is 2",128,1,128,"The LCM (Least Common Multiple) of 2 and 3 is 6, not 4.",23,0,14.77
+What does CPU stand for?,easy,central processing unit,hard,best_of_n,"CPU stands for ""Central Processing Unit."" It is the brain of a computer, responsible for executing instructions and performing calculations. The CPU contains the logic and arithmetic operations that allow a computer to perform tasks such as reading and writing data, running programs, and managing memory.",54,1,35.62,CPU stands for Central Processing Unit.,8,1,9.58,"CPU stands for ""Central Processing Unit."" It is the brain of a computer, responsible for executing instructions and performing calculations. The CPU contains the logic and arithmetic operations that allow a computer to perform tasks such as reading and writing data, running programs, and managing memory.",54,1,38.2,"CPU stands for ""Central Processing Unit."" It is the brain of a computer, responsible for executing instructions and performing calculations. The CPU contains the logic and arithmetic operations that allow a computer to perform tasks such as reading and writing data, running programs, and managing memory.",108,1,108,CPU stands for Central Processing Unit.,8,1,6.44
+What is 2 to the power of 8?,easy,256,hard,best_of_n,"To calculate \(2^8\), you simply multiply 2 by itself 8 times:
+
+\[2^2 = 2 \times 2 = \boxed{4}\]
+
+\[2^{3} = 4 \times \text{2} = \textbf{8}\]
+
+So, \(2",64,0,51.35,2 to any power of eight will result in 256.,15,1,11.03,"To calculate \(2^8\), you simply multiply 2 by itself 8 times:
+
+\[2^2 = 2 \times 2 = \boxed{4}\]
+
+\[2^{3} = 4 \times \text{2} = \textbf{8}\]
+
+So, \(2",64,0,39.84,"To calculate \(2^8\), you simply multiply 2 by itself 8 times:
+
+\[2^2 = 2 \times 2 = \boxed{4}\]
+
+\[2^{3} = 4 \times \text{2} = \textbf{8}\]
+
+So, \(2",128,0,128,2 to any power of eight will result in 256.,15,1,10.54
+Explain the difference between TCP and UDP.,medium,reliable,medium,best_of_n,"Certainly! Let's break down the differences between TCP (Transmission Control Protocol) and UDP (User Datagram Protocol).
+
+### TCP (Transport Control Protocol)
+
+**TCP is a connection-oriented protocol that provides reliable data transmission over a network.**
+
+**Key Characteristics:**
+1. **Reliability:** TCP ensures that data is delivered reliably",64,1,46.88,"TCP (Transmission Control Protocol) and UDP (User Datagram Protocol) are both protocols used for transmitting data over a network, but they differ in their approach to data transmission and reliability. TCP provides a reliable and ordered data transmission, ensuring that data is delivered in the correct order and without errors. UDP, on the other hand",64,1,41.23,"Certainly! Let's break down the differences between TCP (Transmission Control Protocol) and UDP (User Datagram Protocol).
+
+### TCP (Transport Control Protocol)
+
+**TCP is a connection-oriented protocol that provides reliable data transmission over a network.**
+
+**Key Characteristics:**
+1. **Reliability:** TCP ensures that data is delivered reliably",64,1,45.36,"Certainly! Let's break down the differences between TCP (Transmission Control Protocol) and UDP (User Datagram Protocol).
+
+### TCP (Transport Control Protocol)
+
+**TCP is a connection-oriented protocol that provides reliable data transmission over a network.**
+
+**Key Characteristics:**
+1. **Reliability:** TCP ensures that data is delivered reliably",128,1,128,"Certainly! Let's break down the differences between TCP (Transmission Control Protocol) and UDP (User Datagram Protocol).
+
+### TCP (Transport Control Protocol)
+
+**TCP is a connection-oriented protocol that provides reliable data transmission over a network.**
+
+**Key Characteristics:**
+1. **Reliability:** TCP ensures that data is delivered reliably",64,1,46.41
+A train: 60 km/h for 2h then 80 km/h for 3h. Average speed?,medium,72,medium,best_of_n,"To find the average speed of the train over the given time intervals, we need to follow these steps:
+
+1. **Calculate the total distance traveled:**
+   - The train travels 6 km/h * 2 hours = 12 km.
+   - Then, it travels 8 km/h = 8.",64,0,56.05,The average speed for the entire trip is 62.5 km/h.,17,0,13.44,"To find the average speed of the train over the given time intervals, we need to follow these steps:
+
+1. **Calculate the total distance traveled:**
+   - The train travels 6 km/h * 2 hours = 12 km.
+   - Then, it travels 8 km/h = 8.",64,0,44.41,"To find the average speed of the train over the given time intervals, we need to follow these steps:
+
+1. **Calculate the total distance traveled:**
+   - The train travels 6 km/h * 2 hours = 12 km.
+   - Then, it travels 8 km/h = 8.",128,0,128,"To find the average speed of the train over the given time intervals, we need to follow these steps:
+
+1. **Calculate the total distance traveled:**
+   - The train travels 6 km/h * 2 hours = 12 km.
+   - Then, it travels 8 km/h = 8.",64,0,49.18
+What is the time complexity of merge sort? Explain.,medium,n log n,medium,best_of_n,"To determine the time complexities of merge sorting, we need to understand how merge sort works and how it compares to other sorting algorithms like quicksort and heapsort.
+
+### Merge Sort Overview
+Merge sort is a divide-and-conquer algorithm that divides a list into two halves, sorts each half, and then merges the two sorted",64,0,47.63,"The time complexity for merge sort is O(n log n), where n is the number of elements in the list. This is because the merge sort algorithm involves dividing the list into two halves, sorting each half recursively, and then merging the two sorted halves. The number of comparisons and swaps required for each pass through the list",64,1,38.63,"To determine the time complexities of merge sorting, we need to understand how merge sort works and how it compares to other sorting algorithms like quicksort and heapsort.
+
+### Merge Sort Overview
+Merge sort is a divide-and-conquer algorithm that divides a list into two halves, sorts each half, and then merges the two sorted",64,0,39.34,"To determine the time complexities of merge sorting, we need to understand how merge sort works and how it compares to other sorting algorithms like quicksort and heapsort.
+
+### Merge Sort Overview
+Merge sort is a divide-and-conquer algorithm that divides a list into two halves, sorts each half, and then merges the two sorted",128,0,128,"To determine the time complexities of merge sorting, we need to understand how merge sort works and how it compares to other sorting algorithms like quicksort and heapsort.
+
+### Merge Sort Overview
+Merge sort is a divide-and-conquer algorithm that divides a list into two halves, sorts each half, and then merges the two sorted",64,0,37.53
+Explain how binary search works.,medium,sorted,medium,best_of_n,"Certainly! Binary search is a search algorithm that allows us to find a specific element in a sorted list. Here's a step-by-step explanation of how it works:
+
+### Step 1: Understand the Problem
+You want to find an element in an array that is sorted in ascending order. The element you're searching for",64,1,41.86,Binary search is a search algorithm that allows for the efficient searching of a sorted array or list. It works by repeatedly dividing the search interval in half until the target value is found or the interval is empty.,42,1,25.5,"Certainly! Binary search is a search algorithm that allows us to find a specific element in a sorted list. Here's a step-by-step explanation of how it works:
+
+### Step 1: Understand the Problem
+You want to find an element in an array that is sorted in ascending order. The element you're searching for",64,1,37.05,"Certainly! Binary search is a search algorithm that allows us to find a specific element in a sorted list. Here's a step-by-step explanation of how it works:
+
+### Step 1: Understand the Problem
+You want to find an element in an array that is sorted in ascending order. The element you're searching for",128,1,128,"Certainly! Binary search is a search algorithm that allows us to find a specific element in a sorted list. Here's a step-by-step explanation of how it works:
+
+### Step 1: Understand the Problem
+You want to find an element in an array that is sorted in ascending order. The element you're searching for",64,1,36.79
+What is the difference between a stack and a queue?,medium,lifo,medium,best_of_n,"Certainly! Let's break down the difference in a step-by-step manner:
+
+1. **Definition**:
+   - **Stack**: A linear data structure that follows the Last In, First Out (LIFO) principle. It is a collection of elements where the last element added is the first one to be removed.",64,1,43.9,"A stack is a linear data structure that follows the Last In, First Out (LIFO) principle, meaning that the last element added to the stack is the first one to be removed. A queue, on the other hand, is a data structure with the First In, Last Out (FIFO) property, meaning",64,1,38.35,"Certainly! Let's break down the difference in a step-by-step manner:
+
+1. **Definition**:
+   - **Stack**: A linear data structure that follows the Last In, First Out (LIFO) principle. It is a collection of elements where the last element added is the first one to be removed.",64,1,46.56,"Certainly! Let's break down the difference in a step-by-step manner:
+
+1. **Definition**:
+   - **Stack**: A linear data structure that follows the Last In, First Out (LIFO) principle. It is a collection of elements where the last element added is the first one to be removed.",128,1,128,"Certainly! Let's break down the difference in a step-by-step manner:
+
+1. **Definition**:
+   - **Stack**: A linear data structure that follows the Last In, First Out (LIFO) principle. It is a collection of elements where the last element added is the first one to be removed.",64,1,42.36
+Explain what recursion is and give a simple example.,medium,itself,medium,best_of_n,"Recursion is a programming technique where a function calls itself repeatedly until a certain condition is met. This can be useful for solving problems that can be broken down into smaller, similar subproblems.
+
+A simple example of recursion is the factorial function. The factorial of a non-negative integer n, denoted as n!, is the",64,1,43.63,"Recursion is the process of defining a function in which the function calls itself. It is a powerful technique for solving problems that can be broken down into smaller, similar subproblems. A simple example of recursion is calculating the factorial of a number. The factorial of n (denoted as n!) is the product of all",64,1,38.09,"Recursion is a programming technique where a function calls itself repeatedly until a certain condition is met. This can be useful for solving problems that can be broken down into smaller, similar subproblems.
+
+A simple example of recursion is the factorial function. The factorial of a non-negative integer n, denoted as n!, is the",64,1,37.67,"Recursion is a programming technique where a function calls itself repeatedly until a certain condition is met. This can be useful for solving problems that can be broken down into smaller, similar subproblems.
+
+A simple example of recursion is the factorial function. The factorial of a non-negative integer n, denoted as n!, is the",128,1,128,"Recursion is a programming technique where a function calls itself repeatedly until a certain condition is met. This can be useful for solving problems that can be broken down into smaller, similar subproblems.
+
+A simple example of recursion is the factorial function. The factorial of a non-negative integer n, denoted as n!, is the",64,1,41.77
+What is the time complexity of quicksort on average?,medium,n log n,medium,best_of_n,"To determine the average time complexity for quicksort, we need to consider the worst-case and average cases. Quicksort is a divide-and-conquer algorithm that works by selecting a 'pivot' element from the array and partitioning the other elements into two sub-arrays, according to whether they are less than or greater than",64,0,59.01,The time complexity for quicksort is O(n log n).,13,1,10.14,"To determine the average time complexity for quicksort, we need to consider the worst-case and average cases. Quicksort is a divide-and-conquer algorithm that works by selecting a 'pivot' element from the array and partitioning the other elements into two sub-arrays, according to whether they are less than or greater than",64,0,41.06,"To determine the average time complexity for quicksort, we need to consider the worst-case and average cases. Quicksort is a divide-and-conquer algorithm that works by selecting a 'pivot' element from the array and partitioning the other elements into two sub-arrays, according to whether they are less than or greater than",128,0,128,"To determine the average time complexity for quicksort, we need to consider the worst-case and average cases. Quicksort is a divide-and-conquer algorithm that works by selecting a 'pivot' element from the array and partitioning the other elements into two sub-arrays, according to whether they are less than or greater than",64,0,38.81
+Explain the difference between RAM and ROM.,medium,volatile,medium,best_of_n,"Certainly! Let's break down the difference in a step-by-step manner:
+
+### RAM (Random Access Memory)
+RAM is a type of memory that is used to store data temporarily while a computer is running. It is volatile, which means that once the power is turned off, the data stored in RAM is lost. RAM",64,1,47.2,"RAM (Random Access Memory) and ROM (Read-Only Memory) are two types of memory used in computers. RAM is volatile memory that can be accessed and written to by the CPU, while ROM is non-volatile memory that remains unchanged even when the computer is turned off.",57,1,36.86,"Certainly! Let's break down the difference in a step-by-step manner:
+
+### RAM (Random Access Memory)
+RAM is a type of memory that is used to store data temporarily while a computer is running. It is volatile, which means that once the power is turned off, the data stored in RAM is lost. RAM",64,1,38.4,"Certainly! Let's break down the difference in a step-by-step manner:
+
+### RAM (Random Access Memory)
+RAM is a type of memory that is used to store data temporarily while a computer is running. It is volatile, which means that once the power is turned off, the data stored in RAM is lost. RAM",128,1,128,"Certainly! Let's break down the difference in a step-by-step manner:
+
+### RAM (Random Access Memory)
+RAM is a type of memory that is used to store data temporarily while a computer is running. It is volatile, which means that once the power is turned off, the data stored in RAM is lost. RAM",64,1,37.92
+What is Big-O notation and why is it used?,medium,complexity,hard,best_of_n,"Big-O notation is a mathematical notation used to describe the performance of an algorithm. It is used to analyze the time complexity of an operation or function, which is the amount of time it takes to execute the operation or to complete the function.
+The notation is based on the idea that an algorithm is a function that takes an",64,1,44.28,"Big-O notation is a mathematical notation used to describe the performance of an algorithm. It describes the upper bound of the growth rate of the algorithm's running time, indicating the maximum number of operations the algorithm will perform. This notation is used to compare the efficiency of different algorithms and to determine which one is the most suitable for",64,0,35.15,"Big-O notation is a mathematical notation used to describe the performance of an algorithm. It is used to analyze the time complexity of an operation or function, which is the amount of time it takes to execute the operation or to complete the function.
+The notation is based on the idea that an algorithm is a function that takes an",64,1,37.69,"Big-O notation is a mathematical notation used to describe the performance of an algorithm. It is used to analyze the time complexity of an operation or function, which is the amount of time it takes to execute the operation or to complete the function.
+The notation is based on the idea that an algorithm is a function that takes an",128,1,128,"Big-O notation is a mathematical notation used to describe the performance of an algorithm. It is used to analyze the time complexity of an operation or function, which is the amount of time it takes to execute the operation or to complete the function.
+The notation is based on the idea that an algorithm is a function that takes an",64,1,45.79
+Describe how a hash table works.,medium,key,hard,best_of_n,"Certainly! A hash table is a data structure that allows for efficient storage and retrieval of data. Here's a step-by-step explanation of how a typical hash table operates:
+
+### 1. Initialization
+- **Input**: The hash table needs to be initialized with a key-value pair.
+- **Key**: This is the",64,1,51.35,"A hash table is a data structure that uses a hash function to map keys to indices in an array, allowing for efficient storage and retrieval of data. The hash function takes a key and returns an index, which is then used to access the corresponding value in the array. This allows for quick lookups and updates, making",64,1,40.96,"Certainly! A hash table is a data structure that allows for efficient storage and retrieval of data. Here's a step-by-step explanation of how a typical hash table operates:
+
+### 1. Initialization
+- **Input**: The hash table needs to be initialized with a key-value pair.
+- **Key**: This is the",64,1,37.83,"Certainly! A hash table is a data structure that allows for efficient storage and retrieval of data. Here's a step-by-step explanation of how a typical hash table operates:
+
+### 1. Initialization
+- **Input**: The hash table needs to be initialized with a key-value pair.
+- **Key**: This is the",128,1,128,"Certainly! A hash table is a data structure that allows for efficient storage and retrieval of data. Here's a step-by-step explanation of how a typical hash table operates:
+
+### 1. Initialization
+- **Input**: The hash table needs to be initialized with a key-value pair.
+- **Key**: This is the",64,1,39.8
+Prove that sqrt(2) is irrational.,hard,contradiction,hard,best_of_n,"To prove that \(\sqrt{2}\) is an irrational number, we need to show that it cannot be expressed as a ratio of two integers. Here is a step-by-step proof:
+
+1. **Assume the opposite**: Suppose \(\frac{p}{q}\) (in lowest terms) is a",64,0,61.7,"To prove that sqrt2 is irrational, we can use a proof by contradiction. Assume that sqrt(x) is rational, where x is a positive integer. Then, sqrt(x)/sqrt(x) = 1 is rational. This implies that sqrt(y) = x, where y = sqrt(x). Squaring both sides",64,1,44.77,"To prove that \(\sqrt{2}\) is an irrational number, we need to show that it cannot be expressed as a ratio of two integers. Here is a step-by-step proof:
+
+1. **Assume the opposite**: Suppose \(\frac{p}{q}\) (in lowest terms) is a",64,0,39.94,"To prove that \(\sqrt{2}\) is an irrational number, we need to show that it cannot be expressed as a ratio of two integers. Here is a step-by-step proof:
+
+1. **Assume the opposite**: Suppose \(\frac{p}{q}\) (in lowest terms) is a",128,0,128,"To prove that \(\sqrt{2}\) is an irrational number, we need to show that it cannot be expressed as a ratio of two integers. Here is a step-by-step proof:
+
+1. **Assume the opposite**: Suppose \(\frac{p}{q}\) (in lowest terms) is a",64,0,39.74
+Prove that there are infinitely many prime numbers.,hard,contradiction,hard,best_of_n,"To prove that there exist infinitely many primes, we can use a proof by contradiction. Here's a step-by-step approach:
+
+1. **Assume the opposite**: Suppose there are only finitely many prime number pairs \((p, q)\) where \(p\) and \(q\) are both greater than",64,1,49.39,"There are infinitely numerous prime numbers, as the set of prime numbers is infinite.",17,0,11.91,"To prove that there exist infinitely many primes, we can use a proof by contradiction. Here's a step-by-step approach:
+
+1. **Assume the opposite**: Suppose there are only finitely many prime number pairs \((p, q)\) where \(p\) and \(q\) are both greater than",64,1,39.32,"To prove that there exist infinitely many primes, we can use a proof by contradiction. Here's a step-by-step approach:
+
+1. **Assume the opposite**: Suppose there are only finitely many prime number pairs \((p, q)\) where \(p\) and \(q\) are both greater than",128,1,128,"To prove that there exist infinitely many primes, we can use a proof by contradiction. Here's a step-by-step approach:
+
+1. **Assume the opposite**: Suppose there are only finitely many prime number pairs \((p, q)\) where \(p\) and \(q\) are both greater than",64,1,48.84
+Solve the recurrence T(n) = 2T(n/2) + n log n.,hard,n log,hard,best_of_n,"To solve the recurrence relation \( T(n)=2T\left(\frac{n}{2}\right)+n\log n \), we can use the Master Theorem. The Master Theorems are a set of rules that help us determine the asymptotic behavior of recurrence relations of the form \( T(2^",64,0,57.62,"To solve the recurrence relation T(n)=2T( n/2)+n log n, we can use the Master Theorem. The Master Theorems state that for a recurrence relation of the form T(n)=(aT(n/b))+f(n), where a>b>0, and f(n) is an",64,1,48.07,"To solve the recurrence relation \( T(n)=2T\left(\frac{n}{2}\right)+n\log n \), we can use the Master Theorem. The Master Theorems are a set of rules that help us determine the asymptotic behavior of recurrence relations of the form \( T(2^",64,0,39.01,"To solve the recurrence relation \( T(n)=2T\left(\frac{n}{2}\right)+n\log n \), we can use the Master Theorem. The Master Theorems are a set of rules that help us determine the asymptotic behavior of recurrence relations of the form \( T(2^",128,0,128,"To solve the recurrence relation \( T(n)=2T\left(\frac{n}{2}\right)+n\log n \), we can use the Master Theorem. The Master Theorems are a set of rules that help us determine the asymptotic behavior of recurrence relations of the form \( T(2^",64,0,38.65
+Prove that the sum of first n odd numbers equals n^2.,hard,induction,hard,best_of_n,"To prove that the total sum of the first n positive odd numbers is equal to n², we can use a mathematical formula derived from the properties of arithmetic series.
+
+The sum of an arithmetic series can be calculated using the formula:
+
+\[ S = \frac{n}{2} \times (a_1 + a_n",64,0,48.04,"The sum of the first n even numbers is n(n+1), which is not equal to n^3. Therefore, the sum cannot be equal to the sum or difference of the squares of the numbers.",43,0,30.83,"To prove that the total sum of the first n positive odd numbers is equal to n², we can use a mathematical formula derived from the properties of arithmetic series.
+
+The sum of an arithmetic series can be calculated using the formula:
+
+\[ S = \frac{n}{2} \times (a_1 + a_n",64,0,49.63,"To prove that the total sum of the first n positive odd numbers is equal to n², we can use a mathematical formula derived from the properties of arithmetic series.
+
+The sum of an arithmetic series can be calculated using the formula:
+
+\[ S = \frac{n}{2} \times (a_1 + a_n",128,0,128,"To prove that the total sum of the first n positive odd numbers is equal to n², we can use a mathematical formula derived from the properties of arithmetic series.
+
+The sum of an arithmetic series can be calculated using the formula:
+
+\[ S = \frac{n}{2} \times (a_1 + a_n",64,0,39.23
+"Find all integer solutions to x^2 + y^2 = z^2 for x,y,z > 0.",hard,pythagorean,hard,best_of_n,"To find all integer (x, y, z) that satisfy the equation (x^2) + (y^2)= (z^2), we can start by considering the properties of squares and the nature of integers.
+
+1. **Initial Observations:**
+   - Since (x) and (y)",64,0,43.51,"The integer solutions for x, y, and z that satisfy the equation x^² + y² = z² are (1, 1, √2) and (1/2, ∏, ∛2).",48,0,30.83,"To find all integer (x, y, z) that satisfy the equation (x^2) + (y^2)= (z^2), we can start by considering the properties of squares and the nature of integers.
+
+1. **Initial Observations:**
+   - Since (x) and (y)",64,0,43.64,"To find all integer (x, y, z) that satisfy the equation (x^2) + (y^2)= (z^2), we can start by considering the properties of squares and the nature of integers.
+
+1. **Initial Observations:**
+   - Since (x) and (y)",128,0,128,"To find all integer (x, y, z) that satisfy the equation (x^2) + (y^2)= (z^2), we can start by considering the properties of squares and the nature of integers.
+
+1. **Initial Observations:**
+   - Since (x) and (y)",64,0,42.71
+"If p(x) has degree 4, roots 1,2,3,4 and p(0)=24, find p(5).",hard,120,hard,best_of_n,"To find \( p(4) \), we need to use the information given about the polynomial \( p(x), \) its degree, roots, and the value at \( x = 0 \).
+
+1. **Degree of the Polynomial:**
+   The polynomial \( P(x) \) has a degree of",64,0,47.42,"To find p(x), we can use the given information that p(x)=x^4+ax^3+bx^2+cx+d and p(x0)=p(0) = 24. Since p(1)=2, p(2)=4, p(-1)=-2, and",64,0,39.3,"To find \( p(4) \), we need to use the information given about the polynomial \( p(x), \) its degree, roots, and the value at \( x = 0 \).
+
+1. **Degree of the Polynomial:**
+   The polynomial \( P(x) \) has a degree of",64,0,39.3,"To find \( p(4) \), we need to use the information given about the polynomial \( p(x), \) its degree, roots, and the value at \( x = 0 \).
+
+1. **Degree of the Polynomial:**
+   The polynomial \( P(x) \) has a degree of",128,0,128,"To find \( p(4) \), we need to use the information given about the polynomial \( p(x), \) its degree, roots, and the value at \( x = 0 \).
+
+1. **Degree of the Polynomial:**
+   The polynomial \( P(x) \) has a degree of",64,0,50.77
+Derive the Master Theorem for T(n) = aT(n/b) + f(n).,hard,theta,hard,best_of_n,"To derive the Master theorem for the recurrence relation \( T(n)=aT(n/\log n)+f(n) \), we need to follow these steps:
+
+### Step 1: Identify the Recurrence Relation
+The given recurrence relation is:
+\[ T(n)=(aT(\frac{n}{\log n})+",64,0,51.49,"To derive the Master theorem for the recurrence relation \( T(n)=aT(n/\log n)+f(n) \), we need to analyze the growth rates of the function \( T(1) \) and \( T(\log n) \).
+
+1. **Base Case Analysis:**
+   - For \( n",64,0,43.08,"To derive the Master theorem for the recurrence relation \( T(n)=aT(n/\log n)+f(n) \), we need to follow these steps:
+
+### Step 1: Identify the Recurrence Relation
+The given recurrence relation is:
+\[ T(n)=(aT(\frac{n}{\log n})+",64,0,38.93,"To derive the Master theorem for the recurrence relation \( T(n)=aT(n/\log n)+f(n) \), we need to follow these steps:
+
+### Step 1: Identify the Recurrence Relation
+The given recurrence relation is:
+\[ T(n)=(aT(\frac{n}{\log n})+",128,0,128,"To derive the Master theorem for the recurrence relation \( T(n)=aT(n/\log n)+f(n) \), we need to follow these steps:
+
+### Step 1: Identify the Recurrence Relation
+The given recurrence relation is:
+\[ T(n)=(aT(\frac{n}{\log n})+",64,0,43.63
+Prove that log n! = Theta(n log n) using Stirling.,hard,stirling,hard,best_of_n,"To prove that \(\log n!\) is \(\Theta(n \log n)\) using the Stirling approximation, we need to show that there exist positive constants \(c\) and \(n_0\) such that for all \(n \geq n_0\),
+
+\[
+\log n! \",64,1,57.1,"To prove that \(\log n! \in \Theta(n \log n)\) using the Stirling approximation, we start by expressing \(n!\) in terms of \(n\):
+
+\[ n! > \sqrt{2\pi n} \left(\frac{n}{e}\right)^n \]",64,1,39.79,"To prove that \(\log n!\) is \(\Theta(n \log n)\) using the Stirling approximation, we need to show that there exist positive constants \(c\) and \(n_0\) such that for all \(n \geq n_0\),
+
+\[
+\log n! \",64,1,37.37,"To prove that \(\log n!\) is \(\Theta(n \log n)\) using the Stirling approximation, we need to show that there exist positive constants \(c\) and \(n_0\) such that for all \(n \geq n_0\),
+
+\[
+\log n! \",128,1,128,"To prove that \(\log n!\) is \(\Theta(n \log n)\) using the Stirling approximation, we need to show that there exist positive constants \(c\) and \(n_0\) such that for all \(n \geq n_0\),
+
+\[
+\log n! \",64,1,40.81
+Show that P is closed under complement.,hard,complement,hard,best_of_n,"To show that a set \( P \) is closed in a given topology, we need to demonstrate that the complement of \( P^c \) (the complement of the complement) is also a subset of \( \mathcal{T} \), where \( \tau \) represents the given topology.
+
+Let's break",64,1,56.13,"To show that a set \( P \) is closed in a given topological space, we need to demonstrate that the complement of \( P^c \) (the complement of the complement) is also a subset of \( \mathcal{P}(X) \), where \( X \) and \( \com",64,1,37.69,"To show that a set \( P \) is closed in a given topology, we need to demonstrate that the complement of \( P^c \) (the complement of the complement) is also a subset of \( \mathcal{T} \), where \( \tau \) represents the given topology.
+
+Let's break",64,1,39.56,"To show that a set \( P \) is closed in a given topology, we need to demonstrate that the complement of \( P^c \) (the complement of the complement) is also a subset of \( \mathcal{T} \), where \( \tau \) represents the given topology.
+
+Let's break",128,1,128,"To show that a set \( P \) is closed in a given topology, we need to demonstrate that the complement of \( P^c \) (the complement of the complement) is also a subset of \( \mathcal{T} \), where \( \tau \) represents the given topology.
+
+Let's break",64,1,45.52
+Prove that a graph with n vertices and n-1 edges that is connected is a tree.,hard,tree,hard,best_of_n,"To prove that a connected graph with \( n \) vertices and \( n-2 \) edges is a complete graph, we need to show that it is a spanning tree of the complete graph \( K_n \).
+
+### Step-by-Step Proof:
+
+1. **Definition of a Tree:**
+   A tree is",64,1,69.45,"A graph with \( n \) vertices and \( n-2 \) edges that are connected is indeed a tree, as it is a connected graph with exactly \( n - 1 \) simple paths between any two vertices.",47,1,29.47,"To prove that a connected graph with \( n \) vertices and \( n-2 \) edges is a complete graph, we need to show that it is a spanning tree of the complete graph \( K_n \).
+
+### Step-by-Step Proof:
+
+1. **Definition of a Tree:**
+   A tree is",64,1,38.03,"To prove that a connected graph with \( n \) vertices and \( n-2 \) edges is a complete graph, we need to show that it is a spanning tree of the complete graph \( K_n \).
+
+### Step-by-Step Proof:
+
+1. **Definition of a Tree:**
+   A tree is",128,1,128,"To prove that a connected graph with \( n \) vertices and \( n-2 \) edges is a complete graph, we need to show that it is a spanning tree of the complete graph \( K_n \).
+
+### Step-by-Step Proof:
+
+1. **Definition of a Tree:**
+   A tree is",64,1,38.48
